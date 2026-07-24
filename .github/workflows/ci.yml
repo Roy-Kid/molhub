@@ -15,8 +15,10 @@ jobs:
         with:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@v6
-      - name: uv run --extra dev tox -e lint
-        run: uv run --extra dev tox -e lint
+      - run: uv sync --extra dev
+      - run: |
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
 
   test:
     needs: lint
@@ -30,10 +32,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v6
-      - name: uv run --extra dev tox -e py
-        run: uv run --extra dev tox -e py
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - run: uv sync --extra dev
+      - run: uv run pytest --cov=src/molhub --cov-report=term-missing --cov-report=xml -v
+      - uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
           flags: python${{ matrix.python-version }}
