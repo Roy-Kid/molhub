@@ -31,6 +31,7 @@ dev = [
   "pytest-cov>=4.0",
   "pytest-mock>=3.15",
   "ruff>=0.15",
+  "tox>=4.23",
 ]
 huggingface = ["huggingface_hub>=0.20"]
 
@@ -59,3 +60,46 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
+
+# Isolated gates — prek + CI: uv run --extra dev tox -e lint|py
+[tool.tox]
+requires = ["tox>=4.23"]
+env_list = ["lint", "py"]
+
+[tool.tox.env.lint]
+description = "CI lint"
+skip_install = true
+base_python = ["python3.12"]
+deps = [
+  "ruff>=0.15",
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+]
+commands = [
+  ["ruff", "check", "src/", "tests/"],
+  ["ruff", "format", "--check", "src/", "tests/"],
+]
+
+[tool.tox.env.py]
+description = "CI test (non-editable package when package=wheel)"
+base_python = ["python3.12"]
+pass_env = [
+  "HOME",
+  "PATH",
+  "SSH_AUTH_SOCK",
+  "TERM",
+  "VIRTUAL_ENV",
+  "UV_*",
+]
+package = "wheel"
+extras = ["dev"]
+commands_pre = [
+  [
+    "{envpython}",
+    "-c",
+    "import pathlib, site; sps=site.getsitepackages(); print('site-packages', sps)",
+  ],
+]
+commands = [
+  ["{envpython}", "-m", "pytest", "--cov=src/molhub", "--cov-report=term-missing", "--cov-report=xml", "-v"],
+]
