@@ -14,7 +14,6 @@
 # `index_{train,test}_0N.csv`) are also in v4 and are deliberately not
 # catalogued here: the archive duplicates the ten roles below, and nothing in
 # molhub consumes the splits yet. Add roles when something does.
-
 kind: dataset
 namespace: molcrafts
 name: revmd17
@@ -36,6 +35,8 @@ doi: 10.6084/m9.figshare.12672038.v4
 artifacts:
   - role: aspirin
     filename: rmd17_aspirin.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:17fd6fb69066888613f7e16b358a7553
     size: 153601803
     locators:
@@ -43,6 +44,8 @@ artifacts:
 
   - role: azobenzene
     filename: rmd17_azobenzene.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:be79df918468eb3579aa73a0becf7390
     size: 175180782
     locators:
@@ -50,6 +53,8 @@ artifacts:
 
   - role: benzene
     filename: rmd17_benzene.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:18c9242bc90fbf28215f6dd81e650f16
     size: 88801794
     locators:
@@ -57,6 +62,8 @@ artifacts:
 
   - role: ethanol
     filename: rmd17_ethanol.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:eb837fb8deb27d4e0d52f71a03aff776
     size: 67201791
     locators:
@@ -64,6 +71,8 @@ artifacts:
 
   - role: malonaldehyde
     filename: rmd17_malonaldehyde.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:cdc1d70c0c34062ddde6e5071eb6fe21
     size: 67201791
     locators:
@@ -71,6 +80,8 @@ artifacts:
 
   - role: naphthalene
     filename: rmd17_naphthalene.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:0efba19c9907e3852318b1e6008b3b9e
     size: 132001800
     locators:
@@ -78,6 +89,8 @@ artifacts:
 
   - role: paracetamol
     filename: rmd17_paracetamol.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:ba10784f7b67635427085f6d7ec2dd97
     size: 146401802
     locators:
@@ -85,6 +98,8 @@ artifacts:
 
   - role: salicylic
     filename: rmd17_salicylic.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:900fedf242da438400fa4293348d7dd1
     size: 117601798
     locators:
@@ -92,6 +107,8 @@ artifacts:
 
   - role: toluene
     filename: rmd17_toluene.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:0f2913d51f8149c90ab28d697a076f64
     size: 110401797
     locators:
@@ -99,6 +116,8 @@ artifacts:
 
   - role: uracil
     filename: rmd17_uracil.npz
+    format: npz
+    media_type: application/x-npz
     digest: md5:992a4479c28a07e0cce6da964805be31
     size: 88801794
     locators:
@@ -107,6 +126,8 @@ artifacts:
   # Documents the array keys and the units the roles above are stored in.
   - role: readme
     filename: readme.txt
+    format: text
+    media_type: text/plain
     digest: md5:29e6f250bb2d1c461363e24955b5be1e
     size: 2082
     locators:

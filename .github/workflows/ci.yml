@@ -71,11 +71,6 @@ jobs:
     steps:
       - name: Check out MolHub
         uses: actions/checkout@v4
-      - name: Check out the registry database
-        uses: actions/checkout@v4
-        with:
-          repository: MolCrafts/molhub-registry
-          path: .registry-source
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -92,21 +87,19 @@ jobs:
         run: npm ci
       - name: Audit production dependencies
         run: npm run security:audit
-      - name: Enforce the registry data-only boundary
-        run: npm run registry:layout -- "$GITHUB_WORKSPACE/.registry-source"
-      - name: Validate and build the registry database
+      - name: Validate and build the in-tree registry database
         run: |
-          npm run registry:validate -- "$GITHUB_WORKSPACE/.registry-source/artifacts"
-          npm run registry:build -- "$GITHUB_WORKSPACE/.registry-source/artifacts" "$GITHUB_WORKSPACE/.registry-source/dist"
+          npm run registry:validate
+          npm run registry:build
       - name: Record the registry source revision
-        run: echo "PUBLIC_MOLHUB_REGISTRY_REVISION=$(git -C .registry-source rev-parse HEAD)" >> "$GITHUB_ENV"
+        run: echo "PUBLIC_MOLHUB_REGISTRY_REVISION=${GITHUB_SHA}" >> "$GITHUB_ENV"
       - name: Run every Node quality gate
         env:
-          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.registry-source/dist/registry.json
+          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.generated/registry/registry.json
         run: npm run check
       - name: Build publishable outputs
         env:
-          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.registry-source/dist/registry.json
+          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.generated/registry/registry.json
         run: |
           npm run build --workspace @molcrafts/molhub
           npm run deploy:dry --workspace @molcrafts/molhub-api

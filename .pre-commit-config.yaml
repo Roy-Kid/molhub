@@ -2,8 +2,7 @@
 # CI parity: same shell commands as .github/workflows/ci.yml (no tox wrapper).
 # tox remains in [project.optional-dependencies] dev for optional local isolation.
 #
-# Do not push until `prek run --all-files --stage pre-push` is green. Registry
-# schema and npm audit failures must fail here, not only on GitHub.
+# Do not push until `prek run --all-files --stage pre-push` is green.
 
 default_install_hook_types: [pre-commit, pre-push]
 
@@ -36,7 +35,7 @@ repos:
 
       - id: ci-node
         name: "CI node + registry (same as ci.yml)"
-        entry: bash -c 'set -euo pipefail; REGISTRY_ROOT="${MOLHUB_REGISTRY_ROOT:-$PWD/../molhub-registry}"; test -d "$REGISTRY_ROOT/artifacts" || { echo "Missing $REGISTRY_ROOT/artifacts" >&2; exit 1; }; npm ci; npm run security:audit; npm run registry:layout -- "$REGISTRY_ROOT"; npm run registry:validate -- "$REGISTRY_ROOT/artifacts"; npm run registry:build -- "$REGISTRY_ROOT/artifacts" "$REGISTRY_ROOT/dist"; export MOLHUB_REGISTRY_JSON="$REGISTRY_ROOT/dist/registry.json"; npm run check'
+        entry: bash -c 'set -euo pipefail; npm ci; npm run security:audit; npm run registry:validate; npm run registry:build; export MOLHUB_REGISTRY_JSON="$PWD/.generated/registry/registry.json"; npm run check'
         language: system
         pass_filenames: false
         always_run: true

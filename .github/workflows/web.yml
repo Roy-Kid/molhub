@@ -55,12 +55,6 @@ jobs:
       - name: Check out MolHub
         uses: actions/checkout@v4
 
-      - name: Check out the canonical registry database
-        uses: actions/checkout@v4
-        with:
-          repository: MolCrafts/molhub-registry
-          path: .registry-source
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -71,17 +65,17 @@ jobs:
       - name: Install the workspace
         run: npm ci
 
-      - name: Validate and build the registry snapshot input
+      - name: Validate and build the in-tree registry snapshot
         run: |
-          npm run registry:validate -- "$GITHUB_WORKSPACE/.registry-source/artifacts"
-          npm run registry:build -- "$GITHUB_WORKSPACE/.registry-source/artifacts" "$GITHUB_WORKSPACE/.registry-source/dist"
+          npm run registry:validate
+          npm run registry:build
 
       - name: Record the registry source revision
-        run: echo "PUBLIC_MOLHUB_REGISTRY_REVISION=$(git -C .registry-source rev-parse HEAD)" >> "$GITHUB_ENV"
+        run: echo "PUBLIC_MOLHUB_REGISTRY_REVISION=${GITHUB_SHA}" >> "$GITHUB_ENV"
 
       - name: Run Web gates
         env:
-          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.registry-source/dist/registry.json
+          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.generated/registry/registry.json
         run: |
           npm run lint --workspace @molcrafts/molhub-web
           npm run test --workspace @molcrafts/molhub-web
@@ -96,7 +90,7 @@ jobs:
 
       - name: Run the real-browser Inspector acceptance
         env:
-          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.registry-source/dist/registry.json
+          MOLHUB_REGISTRY_JSON: ${{ github.workspace }}/.generated/registry/registry.json
         run: npm run test:e2e --workspace @molcrafts/molhub-web
 
       - name: Retain Inspector screenshots and traces

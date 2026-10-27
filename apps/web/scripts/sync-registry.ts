@@ -3,7 +3,8 @@ import path from "node:path";
 import { RegistryBuilder } from "@molcrafts/molhub-registry-tools";
 
 const webRoot = path.resolve(import.meta.dirname, "..");
-const localRegistryArtifacts = path.resolve(webRoot, "../../../molhub-registry/artifacts");
+const repoRoot = path.resolve(webRoot, "../..");
+const localRegistryArtifacts = path.resolve(repoRoot, "src/molhub/registry_data");
 const configuredSnapshot = process.env.MOLHUB_REGISTRY_JSON;
 const destinationDirectory = path.resolve(webRoot, ".generated");
 const destination = path.resolve(destinationDirectory, "registry.json");
@@ -21,7 +22,7 @@ if (configuredSnapshot) {
     throw new Error(
       [
         `Could not build the MolHub registry from ${localRegistryArtifacts}.`,
-        "Keep molhub-registry beside molhub, or set MOLHUB_REGISTRY_JSON to a generated snapshot.",
+        "Expected approved manifests under src/molhub/registry_data, or set MOLHUB_REGISTRY_JSON.",
         detail,
       ].join("\n"),
     );

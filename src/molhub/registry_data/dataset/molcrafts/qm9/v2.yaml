@@ -11,7 +11,6 @@
 # project's own history includes that response being cached as a valid 0-byte
 # exclusion list -- silently turning 130,831 characterised molecules into
 # 133,885.
-
 kind: dataset
 namespace: molcrafts
 name: qm9
@@ -30,6 +29,8 @@ artifacts:
   - role: main
     # doi:10.6084/m9.figshare.978904_D12 — article 1057646, version 2
     filename: dsgdb9nsd.xyz.tar.bz2
+    format: tar-bz2
+    media_type: application/x-bzip2
     digest: md5:ad1ebd51ee7f5b3a6e32e974e5d54012
     size: 86144227
     locators:
@@ -38,6 +39,8 @@ artifacts:
   - role: exclude
     # doi:10.6084/m9.figshare.978904_D10 — article 1057644, version 1
     filename: uncharacterized.txt
+    format: text
+    media_type: text/plain
     digest: md5:a361887bacb427b8a0ce7903d92a53b4
     size: 486752
     locators:

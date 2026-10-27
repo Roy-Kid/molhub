@@ -24,7 +24,6 @@
 # Upstream also ships train_mixedT.xyz, test_dih.xyz and iso_atoms.xyz in the
 # same directory. They are deliberately not indexed here yet; adding them is
 # three more entries under `artifacts` and no code change.
-
 kind: dataset
 namespace: molcrafts
 name: 3bpa
@@ -45,24 +44,32 @@ doi: 10.1021/acs.jctc.1c00647
 artifacts:
   - role: train_300K
     filename: train_300K.xyz
+    format: extxyz
+    media_type: chemical/x-xyz
     size: 1504880
     locators:
       - https://raw.githubusercontent.com/davkovacs/BOTNet-datasets/29e6d467317e4b5967b7ea5cbee54de953fa0d45/dataset_3BPA/train_300K.xyz
 
   - role: test_300K
     filename: test_300K.xyz
+    format: extxyz
+    media_type: chemical/x-xyz
     size: 5023260
     locators:
       - https://raw.githubusercontent.com/davkovacs/BOTNet-datasets/29e6d467317e4b5967b7ea5cbee54de953fa0d45/dataset_3BPA/test_300K.xyz
 
   - role: test_600K
     filename: test_600K.xyz
+    format: extxyz
+    media_type: chemical/x-xyz
     size: 6434399
     locators:
       - https://raw.githubusercontent.com/davkovacs/BOTNet-datasets/29e6d467317e4b5967b7ea5cbee54de953fa0d45/dataset_3BPA/test_600K.xyz
 
   - role: test_1200K
     filename: test_1200K.xyz
+    format: extxyz
+    media_type: chemical/x-xyz
     size: 6437539
     locators:
       - https://raw.githubusercontent.com/davkovacs/BOTNet-datasets/29e6d467317e4b5967b7ea5cbee54de953fa0d45/dataset_3BPA/test_1200K.xyz

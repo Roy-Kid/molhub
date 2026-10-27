@@ -41,6 +41,7 @@ data/
 
 # Web app build inputs and outputs
 node_modules/
+.generated/
 apps/web/.generated/
 apps/web/dist/
 apps/web/.rsbuild/

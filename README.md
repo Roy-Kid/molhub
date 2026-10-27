@@ -43,11 +43,11 @@ layout. Approved records remain in a separate data-only repository.
 | Submission API | `apps/api/` | D1-backed submission state, review, GitHub PR publication, and merge webhooks |
 | Shared contract | `spec/` | The only hand-authored manifest and registry schemas plus cross-language vectors |
 | Registry tooling | `packages/registry-tools/` | Validation and deterministic snapshot generation |
-| Registry database | [`MolCrafts/molhub-registry`](https://github.com/MolCrafts/molhub-registry) | Approved YAML manifests only |
+| Registry database | `src/molhub/registry_data/` | Approved YAML manifests (in-tree for development) |
 | Scientific payloads | Zenodo, Figshare, Hugging Face, git hosts | The actual artifact bytes |
 
-The Web build uses the shared registry builder to derive `registry.json` from a
-sibling database, or accepts an explicit snapshot through
+The Web build uses the shared registry builder to derive `registry.json` from
+`src/molhub/registry_data/`, or accepts an explicit snapshot through
 `MOLHUB_REGISTRY_JSON`. The Web never writes approved manifests.
 
 ## Product development
@@ -67,7 +67,7 @@ npm run db:migrate:local --workspace @molcrafts/molhub-api
 npm run dev --workspace @molcrafts/molhub-api   # http://localhost:8787
 ```
 
-Keep `molhub-registry` checked out beside this repository, or set
+Approved manifests live under `src/molhub/registry_data/`. Optionally set
 `MOLHUB_REGISTRY_JSON` to an explicit generated snapshot. See
 [`apps/web/README.md`](apps/web/README.md) and
 [`apps/api/README.md`](apps/api/README.md).

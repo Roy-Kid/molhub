@@ -20,14 +20,14 @@ export const TOOL_ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))
 /** MolHub product workspace, which owns the language-neutral contract. */
 export const REPO_ROOT = dirname(dirname(TOOL_ROOT));
 
-/** Local sibling used when a caller does not pass a registry path explicitly. */
-export const DEFAULT_REGISTRY_ROOT = resolve(REPO_ROOT, "../molhub-registry");
+/**
+ * In-tree approved manifests for local development and CI.
+ * Layout: `<kind>/<namespace>/<name>/<version>.yaml`.
+ */
+export const ARTIFACTS_DIR = join(REPO_ROOT, "src", "molhub", "registry_data");
 
-/** The registry: `<kind>/<namespace>/<name>/<version>.yaml` beneath here. */
-export const ARTIFACTS_DIR = join(DEFAULT_REGISTRY_ROOT, "artifacts");
-
-/** Build output. Git-ignored; regenerated from `artifacts/` on every build. */
-export const DIST_DIR = join(DEFAULT_REGISTRY_ROOT, "dist");
+/** Build output. Git-ignored; regenerated from {@link ARTIFACTS_DIR} on every build. */
+export const DIST_DIR = join(REPO_ROOT, ".generated", "registry");
 
 /** The contract one manifest answers to. Shared verbatim with the Python client. */
 export const MANIFEST_SCHEMA = join(REPO_ROOT, "spec", "manifest.schema.yaml");

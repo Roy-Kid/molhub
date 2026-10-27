@@ -8,7 +8,6 @@
 # What pins the version is the record id -- a Zenodo record id *is* a version,
 # and its files are immutable after publication -- together with the DOI. The
 # digest is the secondary cross-check that Zenodo kept that promise.
-
 kind: dataset
 namespace: molcrafts
 name: polymer-tg
@@ -24,6 +23,8 @@ doi: 10.5281/zenodo.14980914
 artifacts:
   - role: main
     filename: LAMALAB_CURATED_Tg_structured.csv
+    format: psmiles-csv
+    media_type: text/csv
     digest: md5:ce2c7b2a879450cbbfff4d7ccea648f9
     size: 6024335
     locators:
