@@ -31,7 +31,7 @@ jobs:
   context:
     permissions:
       contents: read
-    name: api-deploy / context
+    name: api-deploy
     uses: MolCrafts/molcrafts-ci/.github/workflows/context.yml@master
 
   deploy:

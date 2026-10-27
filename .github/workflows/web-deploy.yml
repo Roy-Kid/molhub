@@ -30,7 +30,7 @@ jobs:
   context:
     permissions:
       contents: read
-    name: web-deploy / context
+    name: web-deploy
     uses: MolCrafts/molcrafts-ci/.github/workflows/context.yml@master
 
   publish:
