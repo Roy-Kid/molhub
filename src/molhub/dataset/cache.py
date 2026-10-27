@@ -17,33 +17,27 @@ directory rather than two::
     $MOLHUB_HOME/                default ~/.cache/molhub
       files/<key>/…              BlobStore — the cross-client layout contract
       tmp/                       BlobStore — in-flight transfers
-      urls/<filename>            this cache
+      urls/<url-id>-<filename>   this cache
 
 ``urls/`` is **Python-local and not part of the shared layout contract**: the
 TypeScript client neither reads nor writes it, and nothing here may be written
 into ``files/``, which both clients read.
 
-The root itself comes from :class:`BlobStore`, so the resolution rule lives in
-exactly one place. ``$MOLHUB_CACHE_DIR`` is **deprecated**; it is consulted
-only when ``$MOLHUB_HOME`` is unset — so caches written by earlier versions are
-not orphaned — and using it raises a :class:`DeprecationWarning`.
+The URL ID is SHA-256 of the complete URL text, including its query string.
+It identifies a request, not downloaded content; no payload digest is invented.
+The root itself comes from :class:`BlobStore`, so root resolution has one owner.
 """
 
 from __future__ import annotations
 
-import os
+import hashlib
 import re
-import warnings
 from pathlib import Path
 
 from molhub.sources import BlobStore, FileTransfer, HttpsSource, RemoteFile
 
 __all__ = ["DownloadCache"]
 
-# BlobStore owns this variable and the rule behind it. It is read here only to
-# answer "did the user configure a root?" — never to resolve one.
-_HOME_ENV_VAR = "MOLHUB_HOME"
-_LEGACY_ENV_VAR = "MOLHUB_CACHE_DIR"
 _URL_SUBDIR = "urls"
 _UNSAFE = re.compile(r"[^A-Za-z0-9._@-]+")
 
@@ -58,8 +52,8 @@ class DownloadCache:
 
     Args:
         root: Cache root, shared with :class:`BlobStore`; downloads land in its
-            ``urls/`` subdirectory. Defaults to ``$MOLHUB_HOME``, then the
-            deprecated ``$MOLHUB_CACHE_DIR``, then ``~/.cache/molhub``.
+            ``urls/`` subdirectory. Defaults to ``$MOLHUB_HOME``, then
+            ``~/.cache/molhub``.
         transfer: Anything satisfying
             :class:`~molhub.sources.source.FileTransfer`. A URL is already
             located, so nothing here resolves or claims a scheme. Defaults to
@@ -74,29 +68,8 @@ class DownloadCache:
         *,
         transfer: FileTransfer | None = None,
     ) -> None:
-        self._root = self._resolve_root(root)
+        self._root = BlobStore(root).root
         self._transfer = transfer or HttpsSource()
-
-    @staticmethod
-    def _resolve_root(root: str | Path | None) -> Path:
-        """Resolve the cache root, deferring to :class:`BlobStore` for the rule.
-
-        ``$MOLHUB_CACHE_DIR`` is a deprecated fallback for users who configured
-        it before the two caches shared a root; ``$MOLHUB_HOME`` always wins.
-        """
-        if root is not None:
-            return Path(root).expanduser()
-        legacy = os.environ.get(_LEGACY_ENV_VAR)
-        if legacy and not os.environ.get(_HOME_ENV_VAR):
-            warnings.warn(
-                f"${_LEGACY_ENV_VAR} is deprecated and will stop being read. "
-                f"Set ${_HOME_ENV_VAR} instead — it is the one cache root, shared "
-                "with the artifact store and the TypeScript client.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            return Path(legacy).expanduser()
-        return BlobStore().root
 
     @property
     def root(self) -> Path:
@@ -104,8 +77,14 @@ class DownloadCache:
         return self._root
 
     def path_for(self, url: str) -> Path:
-        """Return the path *url* is cached at, without touching the network."""
-        return self._root / _URL_SUBDIR / self.filename_for(url)
+        """Return a URL-specific cache path without touching the network.
+
+        The readable filename tail is bounded to leave space for the URL ID
+        and the transfer's temporary-file suffix on common filesystems.
+        """
+        url_id = hashlib.sha256(url.encode("utf-8")).hexdigest()
+        filename = self.filename_for(url)[-128:]
+        return self._root / _URL_SUBDIR / f"{url_id}-{filename}"
 
     def fetch(self, url: str) -> Path:
         """Return a local path for *url*, downloading it if not already cached.

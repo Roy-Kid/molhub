@@ -24,7 +24,7 @@
 # Upstream also ships train_mixedT.xyz, test_dih.xyz and iso_atoms.xyz in the
 # same directory. They are deliberately not indexed here yet; adding them is
 # three more entries under `artifacts` and no code change.
-schema_version: 1
+
 kind: dataset
 namespace: molcrafts
 name: 3bpa

@@ -41,7 +41,7 @@ try {
 const snapshot: unknown = JSON.parse(raw);
 if (!isRegistrySnapshot(snapshot)) {
   throw new Error(
-    `${source} is not a supported MolHub registry snapshot (expected schema_version 1 and an entries array).`,
+    `${source} is not a supported MolHub registry snapshot (expected an entries array).`,
   );
 }
 
@@ -51,8 +51,8 @@ console.log(
     : `Built ${snapshot.entries.length} registry entries from ${localRegistryArtifacts}.`,
 );
 
-function isRegistrySnapshot(value: unknown): value is { schema_version: 1; entries: unknown[] } {
+function isRegistrySnapshot(value: unknown): value is { entries: unknown[] } {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
-  return candidate.schema_version === 1 && Array.isArray(candidate.entries);
+  return Array.isArray(candidate.entries);
 }

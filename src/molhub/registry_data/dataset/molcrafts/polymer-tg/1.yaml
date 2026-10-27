@@ -8,7 +8,7 @@
 # What pins the version is the record id -- a Zenodo record id *is* a version,
 # and its files are immutable after publication -- together with the DOI. The
 # digest is the secondary cross-check that Zenodo kept that promise.
-schema_version: 1
+
 kind: dataset
 namespace: molcrafts
 name: polymer-tg

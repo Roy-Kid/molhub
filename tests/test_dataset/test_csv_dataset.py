@@ -142,10 +142,10 @@ class TestRemoteCsv:
 
     def test_download_honours_molhub_home(self, tmp_path, monkeypatch):
         monkeypatch.setenv("MOLHUB_HOME", str(tmp_path))
-        monkeypatch.setenv("MOLHUB_CACHE_DIR", str(tmp_path / "legacy"))
         monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: FakeResponse(200, b"a\n1\n"))
         ds = CSVDataset("https://example.invalid/remote.csv")
-        assert ds.path == tmp_path / "urls" / "remote.csv"
+        assert ds.path.parent == tmp_path / "urls"
+        assert ds.path.name.endswith("-remote.csv")
 
     def test_download_never_writes_into_the_shared_files_tree(self, tmp_path, monkeypatch):
         monkeypatch.setenv("MOLHUB_HOME", str(tmp_path))
@@ -154,9 +154,10 @@ class TestRemoteCsv:
         assert not (tmp_path / "files").exists()
 
     def test_download_classmethod_skips_existing_file(self, tmp_path, monkeypatch):
-        cached = tmp_path / "urls" / "keep.csv"
-        cached.parent.mkdir(parents=True, exist_ok=True)
-        cached.write_text("already,here\n")
+        monkeypatch.setattr(
+            urllib.request, "urlopen", lambda *a, **k: FakeResponse(200, b"already,here\n")
+        )
+        cached = CSVDataset.download("https://example.invalid/keep.csv", cache_dir=tmp_path)
 
         def _boom(*a, **k):
             raise AssertionError("should not re-download a cached file")

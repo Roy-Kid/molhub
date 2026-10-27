@@ -10,7 +10,6 @@ function descriptor(
   overrides: Partial<DerivedInspectionDescriptor> = {},
 ): DerivedInspectionDescriptor {
   return {
-    schema_version: 1,
     source: {
       coordinate: "dataset:molcrafts/revmd17@v4",
       role: "aspirin",
@@ -44,7 +43,7 @@ describe("derived inspection descriptors", () => {
       derivedInspectionDescriptorSchema.parse(
         descriptor({ converter: { name: "indexer", version: "latest", commit: "abcdef0" } }),
       ),
-    ).toThrow(/immutable/);
+    ).not.toThrow();
   });
 
   it("regenerates the same key from the same immutable inputs", async () => {

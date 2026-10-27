@@ -89,10 +89,9 @@ Keep `molhub-registry` checked out beside this repository, or set
 | Datasets | `ThreeBPADataset` | 3BPA temperature-transferability benchmark at 300 K / 600 K / 1200 K — auto-downloads & caches one split of `dataset:molcrafts/3bpa@v1` |
 | Datasets | `CSVDataset` | Generic CSV loader for local files or remote URLs — zero extra dependencies, each row becomes a `Frame` |
 | Publishing | `PublishingSource` | The write half of a driver: `publish(files, target, publication)` returns the `Locator` that goes straight into a manifest. Implemented by the Figshare and HuggingFace drivers |
-| Publishing | `molhub.uploader` | Deprecated shims (`HuggingFaceUploader`, `FigshareUploader`) forwarding to those drivers, kept for existing callers |
 | Inspector | `apps/web/` | Shareable structure/trajectory and property-map exploration, with original-source provenance |
 
-Each sample is a [molpy](https://github.com/MolCrafts/molpy) `Frame`: the `atoms` block holds per-atom data (`element`, `x`, `y`, `z`, `number`, and optionally `fx`, `fy`, `fz`), while graph-level targets such as energy live in `frame.meta`. molpy stores those as dtype-tagged `MetaValue` entries — use `molhub.dataset.Targets(frame)` to read them back as plain Python values.
+Each sample is a [molpy](https://github.com/MolCrafts/molpy) `Frame`: the `atoms` block holds per-atom data (`element`, `x`, `y`, `z`, `number`, and optionally `fx`, `fy`, `fz`), while graph-level targets such as energy live in `frame.meta`. molpy 0.20 exposes metadata as a live mapping of Python values; `molhub.dataset.Targets(frame)` provides scalar target reads and replacement writes.
 
 ## Install
 
@@ -102,7 +101,7 @@ pip install molhub[huggingface]    # + HuggingFace Hub upload support
 pip install molhub[dev]            # + dev tooling (pytest, pytest-cov, pytest-mock, ruff, ty, jsonschema, tox)
 ```
 
-Requires Python >= 3.12. Core dependencies: `molcrafts-molpy >= 0.12, < 0.13`, `tqdm`, `requests >= 2.28`, `pyyaml >= 6.0`, `typer >= 0.12`. Installing the package also puts a `molhub` command on your `PATH`.
+Requires Python >= 3.12. Core dependencies: `molcrafts-molpy >= 0.20, < 0.21`, `tqdm`, `requests >= 2.28`, `pyyaml >= 6.0`, `typer >= 0.12`. Installing the package also puts a `molhub` command on your `PATH`.
 
 ## Quick start
 
@@ -322,7 +321,6 @@ from molhub.dataset import CSVDataset
 ds = CSVDataset("/path/to/data.csv")
 ds = CSVDataset("https://example.com/data.csv")
 # cached to $MOLHUB_HOME/urls/, falling back to ~/.cache/molhub/urls/
-# ($MOLHUB_CACHE_DIR still works but is deprecated: read only when $MOLHUB_HOME is unset)
 ```
 
 ### Publishing
@@ -345,44 +343,11 @@ print(locator)   # paste into the manifest's `locators` list
 
 `target` is spelled in the platform's own terms: a HuggingFace `org/repo`, a Figshare article id, or the literal `"new"` where the platform can mint a container. Each driver documents which `Publication` fields it cannot express.
 
-#### Uploader shims (deprecated)
-
-`molhub.uploader` predates the driver protocol and now forwards to it. It is kept so existing callers keep working and is scheduled for removal two minor releases after 0.1 — prefer `publish` above.
-
-**HuggingFace Hub** — requires `pip install molhub[huggingface]`.
-
-```python
-from molhub.uploader import HuggingFaceUploader
-
-uploader = HuggingFaceUploader(token="hf_...")  # or set HF_TOKEN
-
-uploader.upload_file("data/qm9.tar.bz2", repo_id="my-org/qm9", path_in_repo="raw/qm9.tar.bz2")
-uploader.upload_folder("data/processed/", repo_id="my-org/dataset", path_in_repo="processed/")
-uploader.upload_dataset("data/dataset.h5", repo_id="my-org/new-dataset")  # create + upload
-```
-
-**Figshare** — uses the core `requests` dependency; no extra install needed.
-
-```python
-from molhub.uploader import FigshareUploader
-
-uploader = FigshareUploader(token="...")  # or set FIGSHARE_TOKEN
-
-result = uploader.upload_dataset(
-    "data/qm9.tar.bz2",
-    title="QM9 dataset",
-    description="Raw QM9 molecular properties dataset",
-    tags=["quantum-chemistry", "molecules"],
-)
-print(result["article"]["id"], result["file"])
-```
-
 ## MolCrafts ecosystem
 
 | Project | Role |
 |---------|------|
-| [molpy](https://github.com/MolCrafts/molpy)     | Python toolkit — the shared molecular data model & workflow layer |
-| [molrs](https://github.com/MolCrafts/molrs)     | Rust core — molecular data structures & compute kernels (native + WASM) |
+| [molpy](https://github.com/MolCrafts/molpy)     | Unified molecular toolkit — Python / Rust core / WASM / C / C++ bindings |
 | [molpack](https://github.com/MolCrafts/molpack) | Packmol-grade molecular packing (Rust + Python) |
 | [molvis](https://github.com/MolCrafts/molvis)   | WebGL molecular visualization & editing |
 | [molexp](https://github.com/MolCrafts/molexp)   | Workflow & experiment-management platform |

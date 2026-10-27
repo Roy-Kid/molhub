@@ -2,7 +2,7 @@
 
 from molhub.dataset.csv_dataset import CSVDataset
 from molhub.dataset.hub import ArtifactHub
-from molhub.dataset.meta import MetaCodec, Targets
+from molhub.dataset.meta import Targets
 from molhub.dataset.protocol import (
     InMemoryDataset,
     IterableDataset,
@@ -28,5 +28,4 @@ __all__ = [
     "RevMD17Dataset",
     "ThreeBPADataset",
     "Targets",
-    "MetaCodec",
 ]

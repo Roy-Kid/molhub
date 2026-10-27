@@ -1,12 +1,6 @@
 import { z } from "zod";
 
-const exactVersion = z
-  .string()
-  .min(1)
-  .refine((value) => value.toLowerCase() !== "latest", "Versions must be immutable");
-
 export const derivedInspectionDescriptorSchema = z.object({
-  schema_version: z.literal(1),
   source: z.object({
     coordinate: z.string().regex(/^(dataset|model|plugin):[^/]+\/[^@]+@[^@]+$/),
     role: z.string().min(1),
@@ -15,10 +9,10 @@ export const derivedInspectionDescriptorSchema = z.object({
   }),
   converter: z.object({
     name: z.string().min(1),
-    version: exactVersion,
+    version: z.string().min(1),
     commit: z.string().regex(/^[A-Fa-f0-9]{7,64}$/),
   }),
-  molrec_schema_version: exactVersion,
+  molrec_schema_version: z.string().min(1),
   generated_at: z.iso.datetime(),
   record: z.object({
     format: z.literal("molrec-zarr-v3"),
@@ -42,7 +36,6 @@ export async function derivedInspectionKey(
 ): Promise<string> {
   const valid = derivedInspectionDescriptorSchema.parse(descriptor);
   const identity = JSON.stringify({
-    schema_version: valid.schema_version,
     source: valid.source,
     converter: valid.converter,
     molrec_schema_version: valid.molrec_schema_version,

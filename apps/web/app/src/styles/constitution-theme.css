@@ -41,6 +41,7 @@
   --spacing-toolbar-compact: 2.5rem;
   --spacing-toolbar: 2.75rem;
   --spacing-statusbar: 1.75rem;
+  --spacing-side-panel-min: 15rem;
   --spacing-touch-target: 2.75rem;
   --spacing-menu: 8rem;
   --spacing-dialog-sm: 24rem;
@@ -48,6 +49,9 @@
   --spacing-dialog-lg: 34rem;
   --spacing-dialog-scroll: 80vh;
   --spacing-overlay-viewport: calc(100% - 2rem);
+  --spacing-inspector-overlay: min(85%, 20rem);
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --color-overlay-scrim: var(--overlay-scrim);
 }

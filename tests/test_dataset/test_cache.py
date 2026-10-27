@@ -35,9 +35,8 @@ class _FakeTransfer:
 
 @pytest.fixture
 def no_cache_env(monkeypatch):
-    """Neither the current nor the deprecated root variable is set."""
+    """The cache root variable is unset."""
     monkeypatch.delenv("MOLHUB_HOME", raising=False)
-    monkeypatch.delenv("MOLHUB_CACHE_DIR", raising=False)
 
 
 class TestDownloadCache:
@@ -49,31 +48,7 @@ class TestDownloadCache:
 
     def test_explicit_root_wins_over_every_env_var(self, tmp_path, monkeypatch):
         monkeypatch.setenv("MOLHUB_HOME", str(tmp_path / "home"))
-        monkeypatch.setenv("MOLHUB_CACHE_DIR", str(tmp_path / "legacy"))
         assert DownloadCache(tmp_path / "explicit").root == tmp_path / "explicit"
-
-    def test_molhub_home_wins_over_the_deprecated_var(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("MOLHUB_HOME", str(tmp_path / "home"))
-        monkeypatch.setenv("MOLHUB_CACHE_DIR", str(tmp_path / "legacy"))
-        assert DownloadCache().root == tmp_path / "home"
-
-    def test_deprecated_var_is_used_only_when_molhub_home_is_unset(self, tmp_path, monkeypatch):
-        monkeypatch.delenv("MOLHUB_HOME", raising=False)
-        monkeypatch.setenv("MOLHUB_CACHE_DIR", str(tmp_path / "legacy"))
-        with pytest.warns(DeprecationWarning):
-            assert DownloadCache().root == tmp_path / "legacy"
-
-    def test_deprecated_var_warns_and_names_its_replacement(self, tmp_path, monkeypatch):
-        monkeypatch.delenv("MOLHUB_HOME", raising=False)
-        monkeypatch.setenv("MOLHUB_CACHE_DIR", str(tmp_path / "legacy"))
-        with pytest.warns(DeprecationWarning, match="MOLHUB_HOME"):
-            DownloadCache()
-
-    def test_molhub_home_does_not_warn(self, tmp_path, monkeypatch, recwarn):
-        monkeypatch.setenv("MOLHUB_HOME", str(tmp_path / "home"))
-        monkeypatch.setenv("MOLHUB_CACHE_DIR", str(tmp_path / "legacy"))
-        DownloadCache()
-        assert [w for w in recwarn if issubclass(w.category, DeprecationWarning)] == []
 
     def test_defaults_to_the_user_cache_directory(self, tmp_path, monkeypatch, no_cache_env):
         monkeypatch.setenv("HOME", str(tmp_path))
@@ -83,13 +58,6 @@ class TestDownloadCache:
         """One root rule, owned by BlobStore — not a second copy of it."""
         monkeypatch.setenv("MOLHUB_HOME", str(tmp_path / "home"))
         assert DownloadCache().root == BlobStore().root
-
-    def test_tilde_is_expanded_in_the_deprecated_var(self, tmp_path, monkeypatch):
-        monkeypatch.delenv("MOLHUB_HOME", raising=False)
-        monkeypatch.setenv("MOLHUB_CACHE_DIR", "~/molhub")
-        monkeypatch.setenv("HOME", str(tmp_path))
-        with pytest.warns(DeprecationWarning):
-            assert DownloadCache().root == tmp_path / "molhub"
 
     # -- filename_for --------------------------------------------------------
 
@@ -117,7 +85,56 @@ class TestDownloadCache:
 
     def test_path_for_lands_in_the_url_subdirectory(self, tmp_path):
         cache = DownloadCache(tmp_path)
-        assert cache.path_for("https://example.com/x.csv") == tmp_path / "urls" / "x.csv"
+        path = cache.path_for("https://example.com/x.csv")
+        assert path.parent == tmp_path / "urls"
+        assert path.name.endswith("-x.csv")
+
+    @pytest.mark.parametrize(
+        "other",
+        [
+            "https://other.invalid/train.csv",
+            "https://example.invalid/other/train.csv",
+            "https://example.invalid/train.csv?split=test",
+            "http://example.invalid/train.csv",
+        ],
+    )
+    def test_distinct_urls_do_not_reuse_each_others_bytes(self, tmp_path, other):
+        first_url = "https://example.invalid/train.csv"
+        first_transfer = _FakeTransfer(b"first dataset")
+        second_transfer = _FakeTransfer(b"second dataset")
+        first_cache = DownloadCache(tmp_path, transfer=first_transfer)
+        second_cache = DownloadCache(tmp_path, transfer=second_transfer)
+        first = first_cache.fetch(first_url)
+        second = second_cache.fetch(other)
+        assert first != second
+        assert first.read_bytes() == b"first dataset"
+        assert second.read_bytes() == b"second dataset"
+        assert first_cache.fetch(first_url) == first
+        assert second_cache.fetch(other) == second
+        assert first_transfer.urls == [first_url]
+        assert second_transfer.urls == [other]
+
+    def test_unidentified_file_is_not_used_as_url_cache(self, tmp_path):
+        stale = tmp_path / "urls" / "train.csv"
+        stale.parent.mkdir(parents=True)
+        stale.write_bytes(b"unknown dataset")
+        transfer = _FakeTransfer(b"requested dataset")
+        cache = DownloadCache(tmp_path, transfer=transfer)
+        url = "https://example.invalid/train.csv"
+        assert cache.fetch(url).read_bytes() == b"requested dataset"
+        assert transfer.urls == [url]
+        assert stale.read_bytes() == b"unknown dataset"
+
+    def test_url_identity_is_stable_between_instances(self, tmp_path):
+        url = "https://example.invalid/train.csv?split=train"
+        assert DownloadCache(tmp_path).path_for(url) == DownloadCache(tmp_path).path_for(url)
+
+    def test_long_url_filename_stays_usable_for_transfer_scratch_files(self, tmp_path):
+        url = "https://example.invalid/" + "a" * 240 + ".csv"
+        path = DownloadCache(tmp_path).path_for(url)
+        # Leave room for the transport's random suffix and .part extension.
+        assert len(path.name.encode()) <= 200
+        assert path.suffix == ".csv"
 
     def test_path_for_stays_out_of_the_shared_files_tree(self, tmp_path):
         path = DownloadCache(tmp_path).path_for("https://example.com/x.csv")
@@ -156,14 +173,14 @@ class TestDownloadCache:
 
     def test_zero_byte_cache_entry_is_re_downloaded(self, tmp_path):
         """A 0-byte leftover must never be mistaken for a valid cache entry."""
-        stale = tmp_path / "urls" / "x.csv"
+        cache = DownloadCache(tmp_path, transfer=_FakeTransfer(b"real"))
+        stale = cache.path_for("https://example.invalid/x.csv")
         stale.parent.mkdir(parents=True, exist_ok=True)
         stale.write_bytes(b"")
-        cache = DownloadCache(tmp_path, transfer=_FakeTransfer(b"real"))
         assert cache.fetch("https://example.invalid/x.csv").read_bytes() == b"real"
 
     def test_bad_status_propagates_and_leaves_nothing(self, tmp_path):
         cache = DownloadCache(tmp_path, transfer=_FakeTransfer(status=202))
         with pytest.raises(BadStatus, match="202"):
             cache.fetch("https://example.invalid/x.csv")
-        assert not (tmp_path / "urls" / "x.csv").exists()
+        assert not cache.path_for("https://example.invalid/x.csv").exists()

@@ -14,7 +14,7 @@
 # `index_{train,test}_0N.csv`) are also in v4 and are deliberately not
 # catalogued here: the archive duplicates the ten roles below, and nothing in
 # molhub consumes the splits yet. Add roles when something does.
-schema_version: 1
+
 kind: dataset
 namespace: molcrafts
 name: revmd17

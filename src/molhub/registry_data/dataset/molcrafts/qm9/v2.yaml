@@ -11,7 +11,7 @@
 # project's own history includes that response being cached as a valid 0-byte
 # exclusion list -- silently turning 130,831 characterised molecules into
 # 133,885.
-schema_version: 1
+
 kind: dataset
 namespace: molcrafts
 name: qm9

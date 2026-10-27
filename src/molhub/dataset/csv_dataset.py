@@ -92,8 +92,7 @@ class CSVDataset:
     Args:
         path_or_url: Local file path or remote URL to a CSV file.
         cache_dir: Cache root for downloaded CSVs, which land in its ``urls/``
-            subdirectory. Defaults to ``$MOLHUB_HOME``, then the deprecated
-            ``$MOLHUB_CACHE_DIR``, then ``~/.cache/molhub``.
+            subdirectory. Defaults to ``$MOLHUB_HOME``, then ``~/.cache/molhub``.
         download: If True (default), download the file when *path_or_url*
             is a remote URL and the file is not already cached.
     """

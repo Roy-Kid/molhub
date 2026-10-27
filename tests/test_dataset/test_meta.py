@@ -1,4 +1,4 @@
-"""Tests for typed graph-level metadata interop."""
+"""Tests for scalar graph-level target interop."""
 
 from __future__ import annotations
 
@@ -6,55 +6,7 @@ import numpy as np
 import pytest
 from molpy import Frame
 
-from molhub.dataset.meta import MetaCodec, Targets
-
-
-class TestMetaCodecEncode:
-    def test_float(self):
-        encoded = MetaCodec().encode({"energy": -40.5})
-        assert encoded["energy"].dtype == "f64"
-        assert encoded["energy"].value == pytest.approx(-40.5)
-
-    def test_int(self):
-        assert MetaCodec().encode({"n": 7})["n"].dtype == "i64"
-
-    def test_bool_is_not_widened_to_int(self):
-        """``isinstance(True, int)`` is True, so bool must be probed first."""
-        assert MetaCodec().encode({"flag": True})["flag"].dtype == "bool"
-
-    def test_string_uses_the_string_tag_not_str(self):
-        """molpy spells the string dtype ``string``; ``str`` raises."""
-        assert MetaCodec().encode({"tag": "gdb9"})["tag"].dtype == "string"
-
-    def test_numpy_scalars_are_reduced(self):
-        encoded = MetaCodec().encode({"f": np.float64(2.5), "i": np.int64(3), "b": np.bool_(True)})
-        assert (encoded["f"].dtype, encoded["i"].dtype, encoded["b"].dtype) == (
-            "f64",
-            "i64",
-            "bool",
-        )
-
-    def test_empty_mapping(self):
-        assert MetaCodec().encode({}) == {}
-
-    @pytest.mark.parametrize("bad", [None, [1, 2], {"a": 1}, (1, 2), object()])
-    def test_unsupported_type_raises(self, bad):
-        with pytest.raises(TypeError, match="unsupported type"):
-            MetaCodec().encode({"bad": bad})
-
-    def test_error_names_the_offending_key(self):
-        with pytest.raises(TypeError, match="'culprit'"):
-            MetaCodec().encode({"fine": 1.0, "culprit": None})
-
-
-class TestMetaCodecDecode:
-    def test_roundtrip_preserves_python_types(self):
-        codec = MetaCodec()
-        original = {"e": -1.5, "n": 2, "ok": False, "s": "x"}
-        assert codec.decode(codec.encode(original)) == original
-
-    def test_decode_empty(self):
-        assert MetaCodec().decode({}) == {}
+from molhub.dataset.meta import Targets
 
 
 class TestTargetsWrite:
@@ -69,6 +21,22 @@ class TestTargetsWrite:
         Targets(f).write(values)
         assert Targets(f).read() == values
 
+    def test_bool_is_not_widened_to_int(self):
+        f = Frame()
+        Targets(f).write({"flag": True})
+        assert Targets(f)["flag"] is True
+        assert f.meta.dtype("flag") == "bool"
+
+    def test_string_infers_string_dtype(self):
+        f = Frame()
+        Targets(f).write({"tag": "gdb9"})
+        assert f.meta.dtype("tag") == "string"
+
+    def test_numpy_scalars_are_reduced(self):
+        f = Frame()
+        Targets(f).write({"f": np.float64(2.5), "i": np.int64(3), "b": np.bool_(True)})
+        assert Targets(f).read() == {"f": 2.5, "i": 3, "b": True}
+
     def test_replaces_rather_than_merges(self):
         f = Frame()
         Targets(f).write({"a": 1.0, "b": 2.0})
@@ -81,19 +49,17 @@ class TestTargetsWrite:
         Targets(f).write({})
         assert Targets(f).read() == {}
 
-    def test_in_place_mutation_of_meta_does_not_persist(self):
-        """Regression guard for the molpy trap this module exists to hide.
-
-        ``Frame.meta`` returns a freshly built dict, so mutating it is a silent
-        no-op. If molpy ever changes that, this test fails loudly and the
-        assignment-only contract in :meth:`Targets.write` can be revisited.
-        """
+    def test_live_meta_mutations_are_visible(self):
         f = Frame()
-        Targets(f).write({"a": 1.0})
-        snapshot = f.meta
-        snapshot["b"] = snapshot["a"]
-        assert "b" not in f.meta
-        assert Targets(f).read() == {"a": 1.0}
+        targets = Targets(f)
+        targets.write({"a": 1.0})
+        live = f.meta
+        live["b"] = 2.0
+        assert targets.read() == {"a": 1.0, "b": 2.0}
+        live.update({"a": 3.0})
+        assert targets["a"] == 3.0
+        live.clear()
+        assert targets.read() == {}
 
     def test_frames_do_not_share_metadata(self):
         f, g = Frame(), Frame()
@@ -109,9 +75,14 @@ class TestTargetsWrite:
         Targets(clone).write({"a": 9.0})
         assert Targets(f).read()["a"] == pytest.approx(1.0)
 
-    def test_rejects_unsupported_value(self):
-        with pytest.raises(TypeError):
-            Targets(Frame()).write({"bad": None})
+    @pytest.mark.parametrize("bad", [None, [1, 2], {"a": 1}, (1, 2), object()])
+    def test_rejects_unsupported_value(self, bad):
+        with pytest.raises(TypeError, match="unsupported type"):
+            Targets(Frame()).write({"bad": bad})
+
+    def test_error_names_the_offending_key(self):
+        with pytest.raises(TypeError, match="'culprit'"):
+            Targets(Frame()).write({"fine": 1.0, "culprit": None})
 
 
 class TestTargetsMapping:
@@ -145,15 +116,3 @@ class TestTargetsMapping:
         assert len(t) == 0
         assert t.read() == {}
         assert t.keys() == []
-
-
-class TestTargetsCodecInjection:
-    def test_custom_codec_is_used(self):
-        class WideningCodec(MetaCodec):
-            """Stores every int as f64 instead of i64."""
-
-            _DTYPE_BY_TYPE = ((bool, "bool"), (int, "f64"), (float, "f64"), (str, "string"))
-
-        f = Frame()
-        Targets(f, codec=WideningCodec()).write({"n": 3})
-        assert f.meta["n"].dtype == "f64"
